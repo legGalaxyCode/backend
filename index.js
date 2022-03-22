@@ -3,52 +3,25 @@ const express = require('express'),
   http = require('http').createServer(app),
   io = require('socket.io')(http)
 
+const path = require('path')
+const jade = require('jade')
+
 const host = '127.0.0.1'
-const port = 7000
+const port = 3001
 
-let clients = []
-
-io.on('connection', (socket) => {
-  console.log(`Client with id ${socket.id} connected`)
-  clients.push(socket.id)
-
-  socket.emit('message', "I'm server")
-
-  socket.on('message', (message) =>
-    console.log('Message: ', message)
-  )
-
-  socket.on('disconnect', () => {
-    clients.splice(clients.indexOf(socket.id), 1)
-    console.log(`Client with id ${socket.id} disconnected`)
-  })
-})
+app.set('views', path.join(__dirname, 'views'))
+app.set('view engine', 'jade')
 
 app.use(express.static(__dirname))
 
 app.get('/', (req, res) => res.render('index'))
-app.get('/clients-count', (req, res) => {
-  res.json({
-    count: io.clients().server.engine.clientsCount,
-  })
+
+app.get('/news', (req, res) => {
+  res.render('news')
 })
 
-//отправка сообщения конкретному клиенту по его id
-app.post('/client/:id', (req, res) => {
-  if (clients.indexOf(req.params.id) !== -1) {
-    io.sockets.connected[req.params.id].emit(
-      'private message',
-      `Message to client with id ${req.params.id}`
-    )
-    return res
-      .status(200)
-      .json({
-        message: `Message was sent to client with id ${req.params.id}`,
-      })
-  } else
-    return res
-      .status(404)
-      .json({ message: 'Client not found' })
+app.get('/projects', (req, res) => {
+  res.render('projects')
 })
 
 http.listen(port, host, () =>
